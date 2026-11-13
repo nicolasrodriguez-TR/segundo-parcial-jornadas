@@ -9,3 +9,6 @@ local.properties
 
 # Claude (repo map and audit findings)
 .claude/
+
+# Bitacora personal de trabajo
+BITACORA.md
