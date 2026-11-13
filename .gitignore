@@ -1,0 +1,11 @@
+# Gradle / build
+build/
+.gradle/
+local.properties
+
+# Android Studio
+.idea/
+*.iml
+
+# Claude (repo map and audit findings)
+.claude/
