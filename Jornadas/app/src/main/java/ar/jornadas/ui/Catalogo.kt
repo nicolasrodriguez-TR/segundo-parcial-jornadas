@@ -14,29 +14,26 @@ import ar.jornadas.data.Charla
 @Composable
 fun Catalogo(model: ProgramaModel, abrir: (String) -> Unit) {
     // Se quito la recarga automatica de aca: se repetia al cambiar de pestana o volver de una ficha.
-    val dia by model.dia.collectAsStateWithLifecycle()
-    // El tema ahora viene del ViewModel (antes estaba en remember y se perdia al salir de la pantalla).
-    val tema by model.tema.collectAsStateWithLifecycle()
-    // La lista ya viene filtrada por dia y tema desde el ViewModel.
-    val fichas by model.charlasFiltradas.collectAsStateWithLifecycle()
-    val aviso by model.aviso.collectAsStateWithLifecycle()
-    val cargando by model.cargando.collectAsStateWithLifecycle()
-    val usandoDatosGuardados by model.usandoDatosGuardados.collectAsStateWithLifecycle()
-    val sinCharlasProgramadas by model.sinCharlasProgramadas.collectAsStateWithLifecycle()
-    Selector(listOf("Ambos días", "Día 1", "Día 2"), dia) { model.elegirDia(it) }
+    // Todo el estado de la pantalla llega en un solo objeto desde el ViewModel.
+    // Los filtros y la lista ya filtrada vienen de ahi (antes el tema estaba en remember y se perdia).
+    val estado by model.uiState.collectAsStateWithLifecycle()
+    Selector(listOf("Ambos días", "Día 1", "Día 2"), estado.dia) { model.elegirDia(it) }
     val temas = listOf("Todos", "Android", "Datos", "Calidad")
-    Selector(temas, temas.indexOf(tema)) { model.elegirTema(temas[it]) }
+    Selector(temas, temas.indexOf(estado.tema)) { model.elegirTema(temas[it]) }
     TextButton(onClick = model::recargar) { Text("Actualizar") }
-    if (cargando) LinearProgressIndicator(Modifier.fillMaxWidth())
-    if (aviso.isNotEmpty()) {
-        Text(aviso)
+    if (estado.cargando) LinearProgressIndicator(Modifier.fillMaxWidth())
+    if (estado.resultadoDescarga == ResultadoDescarga.FallaSinDatos) {
+        // Nunca hubo descarga: no hay nada para mostrar, se ofrece reintentar.
+        Text("No se pudo consultar el programa")
         OutlinedButton(onClick = model::recargar) { Text("Reintentar") }
     } else {
         // Fallo la red pero hay datos guardados: se muestran igual y se avisa.
-        if (usandoDatosGuardados) Text("No se pudo actualizar: se están usando datos guardados.")
+        if (estado.resultadoDescarga == ResultadoDescarga.FallaConDatosGuardados) {
+            Text("No se pudo actualizar: se están usando datos guardados.")
+        }
         // Edicion valida sin charlas (v4).
-        if (sinCharlasProgramadas) Text("Sin charlas programadas")
-        Grilla(fichas, abrir)
+        if (estado.sinCharlasProgramadas) Text("Sin charlas programadas")
+        Grilla(estado.charlas, abrir)
     }
 }
 
