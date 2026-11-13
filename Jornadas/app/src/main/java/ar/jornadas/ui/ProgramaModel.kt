@@ -2,13 +2,14 @@ package ar.jornadas.ui
 
 import android.app.Application
 import androidx.lifecycle.*
-import ar.jornadas.Servicios
+import ar.jornadas.JornadasApp
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.io.IOException
 
 class ProgramaModel(app: Application) : AndroidViewModel(app) {
-    private val servicios = Servicios(app)
+    // Se toma el Servicios unico de la Application en lugar de crear uno nuevo.
+    private val servicios = (app as JornadasApp).servicios
     val mesa = servicios.mesa
     private val repo = servicios.agenda
     val charlas = repo.programa.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
