@@ -71,9 +71,9 @@ class ProgramaModel(app: Application, private val estadoGuardado: SavedStateHand
     // Carga automatica: solo ocurre la primera vez que se abre la app en este proceso.
     // Rotar, volver del fondo, abrir una ficha o cambiar de pestana no la repiten.
     fun cargarAlIniciar() {
-        if (aplicacion.cargaAutomaticaRealizada) return
-        aplicacion.cargaAutomaticaRealizada = true
-        recargar()
+        if (repo.tocaCargaAutomatica()) {
+            recargar()
+        }
     }
 
     // Actualizacion explicita (botones Actualizar y Reintentar).

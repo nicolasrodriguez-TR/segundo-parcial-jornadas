@@ -15,6 +15,17 @@ class AgendaRepository(
     // True si alguna vez se descargó una edición completa (aunque no tuviera charlas).
     val hayEdicionGuardada: Flow<Boolean> = dao.observarEstado().map { estado -> estado != null }
 
+    // Indica si en este proceso ya se hizo la carga automatica.
+    // El repositorio se crea una sola vez por proceso (en Servicios), asi que esta marca dura lo mismo que el proceso.
+    private var cargaAutomaticaRealizada = false
+
+    // Devuelve true solo la primera vez que se llama en este proceso: ahi corresponde la carga automatica.
+    fun tocaCargaAutomatica(): Boolean {
+        if (cargaAutomaticaRealizada) return false
+        cargaAutomaticaRealizada = true
+        return true
+    }
+
     // Pide la edición al servidor y la guarda.
     // Devuelve true si se guardó una edición nueva y false si no se pudo obtener.
     // Si falla, no se toca nada de lo guardado: lista, detalle y favoritas quedan como estaban.
