@@ -13,7 +13,7 @@ import ar.jornadas.data.Charla
 
 @Composable
 fun Catalogo(model: ProgramaModel, abrir: (String) -> Unit) {
-    LaunchedEffect(Unit) { model.recargar() }
+    // Se quito la recarga automatica de aca: se repetia al cambiar de pestana o volver de una ficha.
     val dia by model.dia.collectAsStateWithLifecycle()
     var tema by remember { mutableStateOf("Todos") }
     val fichas by model.charlas.collectAsStateWithLifecycle()

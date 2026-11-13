@@ -19,6 +19,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        model.recargar()
+        // Se mantiene en onStart (despues de onCreate, que puede apagar el servicio),
+        // pero ahora el ViewModel solo carga la primera vez del proceso.
+        model.cargarAlIniciar()
     }
 }

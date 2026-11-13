@@ -9,6 +9,10 @@ class JornadasApp : Application() {
     lateinit var servicios: Servicios
         private set
 
+    // Indica si en este proceso ya se hizo la carga automatica.
+    // Vive en la Application (y no en el ViewModel) porque debe durar lo mismo que el proceso.
+    var cargaAutomaticaRealizada = false
+
     override fun onCreate() {
         super.onCreate()
         servicios = Servicios(this)
