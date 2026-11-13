@@ -7,14 +7,18 @@ import androidx.activity.viewModels
 import ar.jornadas.ui.*
 
 class MainActivity : ComponentActivity() {
-    private val model: ProgramaModel by viewModels()
+    // La fabrica le pasa al ViewModel el repositorio unico y el SavedStateHandle.
+    private val model: ProgramaModel by viewModels { ProgramaModel.Factory }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Mesa es la herramienta de prueba del servicio local: no es parte de la app, por eso no pasa por el ViewModel.
+        val mesa = (application as JornadasApp).servicios.mesa
         if (savedInstanceState == null && intent.hasExtra("servicio_disponible")) {
-            model.mesa.disponible = intent.getBooleanExtra("servicio_disponible", true)
+            mesa.disponible = intent.getBooleanExtra("servicio_disponible", true)
             intent.removeExtra("servicio_disponible")
         }
-        setContent { Portada(model) }
+        setContent { Portada(model, mesa) }
     }
 
     override fun onStart() {

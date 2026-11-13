@@ -1,8 +1,10 @@
 package ar.jornadas.ui
 
-import android.app.Application
 import androidx.lifecycle.*
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import ar.jornadas.JornadasApp
+import ar.jornadas.data.AgendaRepository
 import ar.jornadas.data.Charla
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -11,16 +13,14 @@ import kotlinx.coroutines.launch
 private const val CLAVE_DIA = "dia"
 private const val CLAVE_TEMA = "tema"
 
+// Recibe sus dependencias por constructor: en un test se le pasa un repositorio falso.
 // SavedStateHandle guarda los filtros de forma que sobreviven a que Android mate el proceso.
-class ProgramaModel(app: Application, private val estadoGuardado: SavedStateHandle) : AndroidViewModel(app) {
+class ProgramaModel(
+    private val repo: AgendaRepository,
+    private val estadoGuardado: SavedStateHandle,
+) : ViewModel() {
     // Filtros elegidos por el usuario, juntos en un objeto.
     private data class Filtros(val dia: Int, val tema: String)
-
-    // Se toma el Servicios unico de la Application en lugar de crear uno nuevo.
-    private val aplicacion = app as JornadasApp
-    private val servicios = aplicacion.servicios
-    val mesa = servicios.mesa
-    private val repo = servicios.agenda
 
     // Programa completo: lo usa la ficha de detalle para buscar una charla por id.
     val charlas = repo.programa.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -117,4 +117,15 @@ class ProgramaModel(app: Application, private val estadoGuardado: SavedStateHand
     fun elegirTema(nuevoTema: String) { estadoGuardado[CLAVE_TEMA] = nuevoTema }
 
     fun marcar(id: String) { viewModelScope.launch { repo.cambiarFavorita(id) } }
+
+    companion object {
+        // Fabrica que usa MainActivity para crear el ViewModel con sus dependencias:
+        // el repositorio unico (vive en la Application) y el SavedStateHandle que da Android.
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val aplicacion = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as JornadasApp
+                ProgramaModel(aplicacion.servicios.agenda, createSavedStateHandle())
+            }
+        }
+    }
 }

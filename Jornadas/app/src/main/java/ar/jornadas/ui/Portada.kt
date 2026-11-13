@@ -11,9 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import ar.jornadas.lab.ServicioLocal
 
 @Composable
-fun Portada(model: ProgramaModel) {
+fun Portada(model: ProgramaModel, mesa: ServicioLocal) {
     var seccion by rememberSaveable { mutableStateOf("Programa") }
     var detalle by rememberSaveable { mutableStateOf<String?>(null) }
     val charlas by model.charlas.collectAsStateWithLifecycle()
@@ -55,7 +56,7 @@ fun Portada(model: ProgramaModel) {
                             if (miAgenda.isEmpty()) Text("Todavía no agregaste charlas.")
                             Grilla(miAgenda) { detalle = it }
                         }
-                        else -> Mesa(model.mesa)
+                        else -> Mesa(mesa)
                     }
                 }
             }
