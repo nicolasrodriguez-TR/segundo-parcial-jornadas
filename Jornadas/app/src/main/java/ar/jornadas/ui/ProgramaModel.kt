@@ -18,12 +18,18 @@ class ProgramaModel(app: Application, private val estadoGuardado: SavedStateHand
     // y en SavedStateHandle (sobreviven a que maten el proceso).
     val dia = estadoGuardado.getStateFlow("dia", 0)
     val tema = estadoGuardado.getStateFlow("tema", "Todos")
-    val aviso = MutableStateFlow("")
-    val cargando = MutableStateFlow(false)
+    // Cada estado tiene una version privada que solo el ViewModel modifica (_x)
+    // y una version publica de solo lectura que observa la pantalla (x).
+    private val _aviso = MutableStateFlow("")
+    val aviso: StateFlow<String> = _aviso.asStateFlow()
+
+    private val _cargando = MutableStateFlow(false)
+    val cargando: StateFlow<Boolean> = _cargando.asStateFlow()
 
     // True cuando la ultima actualizacion fallo pero hay una edicion guardada:
     // la lista, el detalle y las favoritas siguen visibles y solo se avisa.
-    val usandoDatosGuardados = MutableStateFlow(false)
+    private val _usandoDatosGuardados = MutableStateFlow(false)
+    val usandoDatosGuardados: StateFlow<Boolean> = _usandoDatosGuardados.asStateFlow()
 
     // True cuando la edicion descargada es valida pero no trae charlas (caso v4).
     // combine espera a que ambos flujos emitan, asi no aparece un falso "sin charlas" al abrir.
@@ -43,18 +49,18 @@ class ProgramaModel(app: Application, private val estadoGuardado: SavedStateHand
     fun recargar() {
         // Si ya hay una peticion en curso, se ignora el toque: dos toques seguidos suman un solo intento.
         // Se marca "cargando" antes de lanzar la corrutina para que el segundo toque ya lo vea.
-        if (cargando.value) return
-        cargando.value = true
+        if (_cargando.value) return
+        _cargando.value = true
         viewModelScope.launch {
-            aviso.value = ""
-            usandoDatosGuardados.value = false
+            _aviso.value = ""
+            _usandoDatosGuardados.value = false
             try {
                 val seActualizo = repo.sincronizar()
                 if (!seActualizo) {
                     informarFalla()
                 }
             } finally {
-                cargando.value = false
+                _cargando.value = false
             }
         }
     }
@@ -63,9 +69,9 @@ class ProgramaModel(app: Application, private val estadoGuardado: SavedStateHand
     // Si nunca hubo descarga, se muestra el error con el boton Reintentar.
     private suspend fun informarFalla() {
         if (repo.hayEdicionGuardada.first()) {
-            usandoDatosGuardados.value = true
+            _usandoDatosGuardados.value = true
         } else {
-            aviso.value = "No se pudo consultar el programa"
+            _aviso.value = "No se pudo consultar el programa"
         }
     }
 
