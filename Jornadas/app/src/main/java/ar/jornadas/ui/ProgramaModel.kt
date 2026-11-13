@@ -5,7 +5,6 @@ import androidx.lifecycle.*
 import ar.jornadas.JornadasApp
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.io.IOException
 
 // SavedStateHandle guarda los filtros de forma que sobreviven a que Android mate el proceso.
 class ProgramaModel(app: Application, private val estadoGuardado: SavedStateHandle) : AndroidViewModel(app) {
@@ -50,18 +49,23 @@ class ProgramaModel(app: Application, private val estadoGuardado: SavedStateHand
             aviso.value = ""
             usandoDatosGuardados.value = false
             try {
-                repo.sincronizar()
-            } catch (e: IOException) {
-                // Si ya hubo una descarga exitosa se conservan los datos y solo se avisa.
-                // Si nunca hubo descarga, se muestra el error con el boton Reintentar.
-                if (repo.hayEdicionGuardada.first()) {
-                    usandoDatosGuardados.value = true
-                } else {
-                    aviso.value = "No se pudo consultar el programa"
+                val seActualizo = repo.sincronizar()
+                if (!seActualizo) {
+                    informarFalla()
                 }
             } finally {
                 cargando.value = false
             }
+        }
+    }
+
+    // Si ya hubo una descarga exitosa se conservan los datos y solo se avisa.
+    // Si nunca hubo descarga, se muestra el error con el boton Reintentar.
+    private suspend fun informarFalla() {
+        if (repo.hayEdicionGuardada.first()) {
+            usandoDatosGuardados.value = true
+        } else {
+            aviso.value = "No se pudo consultar el programa"
         }
     }
 

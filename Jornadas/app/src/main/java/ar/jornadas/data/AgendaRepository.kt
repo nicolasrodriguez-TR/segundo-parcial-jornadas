@@ -1,6 +1,7 @@
 package ar.jornadas.data
 
 import androidx.room.withTransaction
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -14,11 +15,25 @@ class AgendaRepository(
     // True si alguna vez se descargó una edición completa (aunque no tuviera charlas).
     val hayEdicionGuardada: Flow<Boolean> = dao.observarEstado().map { estado -> estado != null }
 
-    suspend fun sincronizar() {
-        val fichasNuevas = api.consultar().map {
-            Charla(it.id, it.title, it.track, it.day, it.time, it.room, it.speaker, it.summary)
+    // Pide la edición al servidor y la guarda.
+    // Devuelve true si se guardó una edición nueva y false si no se pudo obtener.
+    // Si falla, no se toca nada de lo guardado: lista, detalle y favoritas quedan como estaban.
+    suspend fun sincronizar(): Boolean {
+        val fichasNuevas = try {
+            api.consultar().map {
+                Charla(it.id, it.title, it.track, it.day, it.time, it.room, it.speaker, it.summary)
+            }
+        } catch (e: CancellationException) {
+            // La corrutina se canceló (por ejemplo, se cerró la pantalla): no es una falla, se deja seguir.
+            throw e
+        } catch (e: Exception) {
+            // Cualquier falla al pedir o al leer la respuesta:
+            // sin conexión (IOException), el servidor respondió 4xx/5xx (HttpException)
+            // o el JSON no tiene el formato esperado (errores de Gson o campos nulos).
+            return false
         }
         reemplazarPrograma(fichasNuevas)
+        return true
     }
 
     // Todo ocurre en una transaccion: las favoritas se leen y se escriben juntas,
