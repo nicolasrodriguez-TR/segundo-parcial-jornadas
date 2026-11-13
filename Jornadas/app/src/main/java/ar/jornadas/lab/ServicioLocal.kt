@@ -3,8 +3,6 @@ package ar.jornadas.lab
 import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.ResponseBody.Companion.toResponseBody
 import java.io.IOException
 
 class ServicioLocal(private val app: Context) : Interceptor {
@@ -28,7 +26,10 @@ class ServicioLocal(private val app: Context) : Interceptor {
         Thread.sleep(if (demoraLarga) 8000L else 1400L)
         if (!online) throw IOException("Servicio desconectado")
         val json = app.assets.open("programa-$version.json").bufferedReader().use { it.readText() }
+        // Retrofit 2.11 trae OkHttp 3.14: se usa su API (MediaType.get y ResponseBody.create).
+        // toMediaType() y toResponseBody() solo existen desde OkHttp 4.
+        val cuerpo = ResponseBody.create(MediaType.get("application/json"), json)
         return Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1)
-            .code(200).message("OK").body(json.toResponseBody("application/json".toMediaType())).build()
+            .code(200).message("OK").body(cuerpo).build()
     }
 }
