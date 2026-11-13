@@ -7,14 +7,18 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.io.IOException
 
-class ProgramaModel(app: Application) : AndroidViewModel(app) {
+// SavedStateHandle guarda los filtros de forma que sobreviven a que Android mate el proceso.
+class ProgramaModel(app: Application, private val estadoGuardado: SavedStateHandle) : AndroidViewModel(app) {
     // Se toma el Servicios unico de la Application en lugar de crear uno nuevo.
     private val aplicacion = app as JornadasApp
     private val servicios = aplicacion.servicios
     val mesa = servicios.mesa
     private val repo = servicios.agenda
     val charlas = repo.programa.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-    val dia = MutableStateFlow(0)
+    // Filtros: viven en el ViewModel (sobreviven a rotar y a abrir una ficha)
+    // y en SavedStateHandle (sobreviven a que maten el proceso).
+    val dia = estadoGuardado.getStateFlow("dia", 0)
+    val tema = estadoGuardado.getStateFlow("tema", "Todos")
     val aviso = MutableStateFlow("")
     val cargando = MutableStateFlow(false)
 
@@ -43,6 +47,10 @@ class ProgramaModel(app: Application) : AndroidViewModel(app) {
             }
         }
     }
+
+    fun elegirDia(nuevoDia: Int) { estadoGuardado["dia"] = nuevoDia }
+
+    fun elegirTema(nuevoTema: String) { estadoGuardado["tema"] = nuevoTema }
 
     fun marcar(id: String) { viewModelScope.launch { repo.cambiarFavorita(id) } }
 }
