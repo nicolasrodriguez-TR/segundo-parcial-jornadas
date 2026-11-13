@@ -20,6 +20,8 @@ fun Catalogo(model: ProgramaModel, abrir: (String) -> Unit) {
     val fichas by model.charlas.collectAsStateWithLifecycle()
     val aviso by model.aviso.collectAsStateWithLifecycle()
     val cargando by model.cargando.collectAsStateWithLifecycle()
+    val usandoDatosGuardados by model.usandoDatosGuardados.collectAsStateWithLifecycle()
+    val sinCharlasProgramadas by model.sinCharlasProgramadas.collectAsStateWithLifecycle()
     Selector(listOf("Ambos días", "Día 1", "Día 2"), dia) { model.elegirDia(it) }
     val temas = listOf("Todos", "Android", "Datos", "Calidad")
     Selector(temas, temas.indexOf(tema)) { model.elegirTema(temas[it]) }
@@ -29,6 +31,10 @@ fun Catalogo(model: ProgramaModel, abrir: (String) -> Unit) {
         Text(aviso)
         OutlinedButton(onClick = model::recargar) { Text("Reintentar") }
     } else {
+        // Fallo la red pero hay datos guardados: se muestran igual y se avisa.
+        if (usandoDatosGuardados) Text("No se pudo actualizar: se están usando datos guardados.")
+        // Edicion valida sin charlas (v4).
+        if (sinCharlasProgramadas) Text("Sin charlas programadas")
         Grilla(fichas.filter { (dia == 0 || it.dia == dia) && (tema == "Todos" || it.tema == tema) }, abrir)
     }
 }

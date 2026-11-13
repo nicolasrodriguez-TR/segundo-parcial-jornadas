@@ -22,6 +22,16 @@ class ProgramaModel(app: Application, private val estadoGuardado: SavedStateHand
     val aviso = MutableStateFlow("")
     val cargando = MutableStateFlow(false)
 
+    // True cuando la ultima actualizacion fallo pero hay una edicion guardada:
+    // la lista, el detalle y las favoritas siguen visibles y solo se avisa.
+    val usandoDatosGuardados = MutableStateFlow(false)
+
+    // True cuando la edicion descargada es valida pero no trae charlas (caso v4).
+    // combine espera a que ambos flujos emitan, asi no aparece un falso "sin charlas" al abrir.
+    val sinCharlasProgramadas = combine(repo.programa, repo.hayEdicionGuardada) { listaDeCharlas, hayEdicion ->
+        hayEdicion && listaDeCharlas.isEmpty()
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     // Carga automatica: solo ocurre la primera vez que se abre la app en este proceso.
     // Rotar, volver del fondo, abrir una ficha o cambiar de pestana no la repiten.
     fun cargarAlIniciar() {
@@ -38,10 +48,17 @@ class ProgramaModel(app: Application, private val estadoGuardado: SavedStateHand
         cargando.value = true
         viewModelScope.launch {
             aviso.value = ""
+            usandoDatosGuardados.value = false
             try {
                 repo.sincronizar()
             } catch (e: IOException) {
-                aviso.value = "No se pudo consultar el programa"
+                // Si ya hubo una descarga exitosa se conservan los datos y solo se avisa.
+                // Si nunca hubo descarga, se muestra el error con el boton Reintentar.
+                if (repo.hayEdicionGuardada.first()) {
+                    usandoDatosGuardados.value = true
+                } else {
+                    aviso.value = "No se pudo consultar el programa"
+                }
             } finally {
                 cargando.value = false
             }
