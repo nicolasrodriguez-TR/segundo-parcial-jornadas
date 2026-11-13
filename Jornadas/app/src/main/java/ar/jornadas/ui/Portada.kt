@@ -17,6 +17,7 @@ fun Portada(model: ProgramaModel) {
     var seccion by rememberSaveable { mutableStateOf("Programa") }
     var detalle by rememberSaveable { mutableStateOf<String?>(null) }
     val charlas by model.charlas.collectAsStateWithLifecycle()
+    val miAgenda by model.miAgenda.collectAsStateWithLifecycle()
     BackHandler(detalle != null || seccion != "Programa") {
         if (detalle != null) detalle = null else seccion = "Programa"
     }
@@ -51,9 +52,8 @@ fun Portada(model: ProgramaModel) {
                     when (seccion) {
                         "Programa" -> Catalogo(model) { detalle = it }
                         "Mi agenda" -> {
-                            val guardadas = charlas.filter { it.favorita }
-                            if (guardadas.isEmpty()) Text("Todavía no agregaste charlas.")
-                            Grilla(guardadas) { detalle = it }
+                            if (miAgenda.isEmpty()) Text("Todavía no agregaste charlas.")
+                            Grilla(miAgenda) { detalle = it }
                         }
                         else -> Mesa(model.mesa)
                     }

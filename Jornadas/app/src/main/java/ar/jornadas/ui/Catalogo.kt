@@ -17,7 +17,8 @@ fun Catalogo(model: ProgramaModel, abrir: (String) -> Unit) {
     val dia by model.dia.collectAsStateWithLifecycle()
     // El tema ahora viene del ViewModel (antes estaba en remember y se perdia al salir de la pantalla).
     val tema by model.tema.collectAsStateWithLifecycle()
-    val fichas by model.charlas.collectAsStateWithLifecycle()
+    // La lista ya viene filtrada por dia y tema desde el ViewModel.
+    val fichas by model.charlasFiltradas.collectAsStateWithLifecycle()
     val aviso by model.aviso.collectAsStateWithLifecycle()
     val cargando by model.cargando.collectAsStateWithLifecycle()
     val usandoDatosGuardados by model.usandoDatosGuardados.collectAsStateWithLifecycle()
@@ -35,7 +36,7 @@ fun Catalogo(model: ProgramaModel, abrir: (String) -> Unit) {
         if (usandoDatosGuardados) Text("No se pudo actualizar: se están usando datos guardados.")
         // Edicion valida sin charlas (v4).
         if (sinCharlasProgramadas) Text("Sin charlas programadas")
-        Grilla(fichas.filter { (dia == 0 || it.dia == dia) && (tema == "Todos" || it.tema == tema) }, abrir)
+        Grilla(fichas, abrir)
     }
 }
 

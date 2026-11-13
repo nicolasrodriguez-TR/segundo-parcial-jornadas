@@ -3,6 +3,7 @@ package ar.jornadas.ui
 import android.app.Application
 import androidx.lifecycle.*
 import ar.jornadas.JornadasApp
+import ar.jornadas.data.Charla
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -18,6 +19,17 @@ class ProgramaModel(app: Application, private val estadoGuardado: SavedStateHand
     // y en SavedStateHandle (sobreviven a que maten el proceso).
     val dia = estadoGuardado.getStateFlow("dia", 0)
     val tema = estadoGuardado.getStateFlow("tema", "Todos")
+
+    // Charlas del programa ya filtradas por dia y tema: la pantalla solo las dibuja.
+    val charlasFiltradas: StateFlow<List<Charla>> =
+        combine(repo.programa, dia, tema) { listaDeCharlas, diaElegido, temaElegido ->
+            listaDeCharlas.filter { charla -> coincideConFiltros(charla, diaElegido, temaElegido) }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    // Charlas marcadas por el usuario (pestana "Mi agenda").
+    val miAgenda: StateFlow<List<Charla>> =
+        repo.programa.map { listaDeCharlas -> listaDeCharlas.filter { charla -> charla.favorita } }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     // Cada estado tiene una version privada que solo el ViewModel modifica (_x)
     // y una version publica de solo lectura que observa la pantalla (x).
     private val _aviso = MutableStateFlow("")
@@ -73,6 +85,13 @@ class ProgramaModel(app: Application, private val estadoGuardado: SavedStateHand
         } else {
             _aviso.value = "No se pudo consultar el programa"
         }
+    }
+
+    // dia 0 significa "Ambos dias"; el tema "Todos" no filtra por tema.
+    private fun coincideConFiltros(charla: Charla, diaElegido: Int, temaElegido: String): Boolean {
+        val coincideDia = diaElegido == 0 || charla.dia == diaElegido
+        val coincideTema = temaElegido == "Todos" || charla.tema == temaElegido
+        return coincideDia && coincideTema
     }
 
     fun elegirDia(nuevoDia: Int) { estadoGuardado["dia"] = nuevoDia }
